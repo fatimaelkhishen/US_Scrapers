@@ -55,7 +55,7 @@ def construct_job(driver, job_link):
 
     # Extracting Job Title  
     try:  
-        title_tag = soup.find("h1", class_="sc-3znpb9-4 gHEvIB")  
+        title_tag = soup.find("h1")  
         job_title = title_tag.text.strip() if title_tag else "NA"  
     except Exception as e:  
         job_title = "NA"  
