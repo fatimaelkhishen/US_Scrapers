@@ -7,14 +7,14 @@ from selenium import webdriver
 import pandas as pd  
 import time  
 
-def get_job_links(max_pages=10):  
+def get_job_links():  
     job_links = []   
     driver = webdriver.Chrome()  
     base_url = "https://www.flexjobs.com"  
     p = 1  
 
     try:  
-        while p <= max_pages:  
+        while True:  # Continue indefinitely until no more listings are found  
             url = f"{base_url}/search?joblocations=united%20states&usecLocation=true&Loc.LatLng=0%2C0&Loc.Radius=30&page={p}"  
             driver.get(url)  
             print(f"Accessing: {url}")  
@@ -25,12 +25,14 @@ def get_job_links(max_pages=10):
                     EC.presence_of_element_located((By.CLASS_NAME, "sc-14nyru2-2"))  
                 )  
             except TimeoutException:  
+                print("Timeout while waiting for elements to load. Exiting...")  
                 break  
 
             soup = BeautifulSoup(driver.page_source, 'html.parser')  
             listings = soup.find_all("div", class_="sc-14nyru2-2")  
 
             if not listings:   
+                print("No more listings found.")  
                 break  
 
             for listing in listings:  
@@ -50,7 +52,6 @@ def construct_job(driver, job_link):
     driver.get(job_link)  
     soup = BeautifulSoup(driver.page_source, 'html.parser')  
 
-    # Start data extraction  
     jobPosting = {}  
 
     # Extracting Job Title  
