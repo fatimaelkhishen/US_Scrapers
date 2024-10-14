@@ -3,7 +3,9 @@ from bs4 import BeautifulSoup
 from selenium import webdriver  
 from selenium.webdriver.common.by import By  
 from selenium.webdriver.support.ui import WebDriverWait  
-from selenium.webdriver.support import expected_conditions as EC  
+from selenium.webdriver.support import expected_conditions as EC
+from datetime import datetime, timedelta
+import re
 import time  
 import random  
 
@@ -27,7 +29,9 @@ def get_job_links(driver):
                 title = job_card.find("h2", class_="res-1tassqi")  
                 if title:  
                     link = title.find('a').get('href')  
-                    job_links.append("https://www.totaljobs.com" + link)  
+                    if not link.startswith("https://www."):
+                        job_links.append("https://www.totaljobs.com" + link)
+  
 
             # Navigate to the next page  
             next_button = soup.find("button", {"aria-label": "Next"})  
@@ -59,7 +63,41 @@ def construct_job(driver, job_link):
         except:
            location = "NA"
         try:
-           dateposted = soup.find('li', class_='at-listing__list-icons_date job-ad-display-62o8fr').text.strip() 
+            dateposted = soup.find('li', class_='at-listing__list-icons_date job-ad-display-62o8fr').text.replace("Published:", "").strip()
+    
+    # Initialize delta as zero
+            delta = timedelta()
+
+            # Match for weeks and days
+            match = re.search(r'(\d+)\s*(weeks?|days?)\s*ago', dateposted)
+            if match:
+               number = int(match.group(1))
+               unit = match.group(2)
+               
+               # Calculate the timedelta based on the unit
+               if 'week' in unit:
+                     delta += timedelta(weeks=number)
+               else:
+                     delta += timedelta(days=number)
+
+            # Match for hours and minutes
+            match_hour = re.search(r'(\d+)\s*(hours?|minutes?)\s*ago', dateposted)
+            if match_hour:
+               number = int(match_hour.group(1))
+               unit = match_hour.group(2)
+
+               # Calculate the timedelta based on the unit
+               if 'hour' in unit:
+                     delta += timedelta(hours=number)
+               else:
+                     delta += timedelta(minutes=number)
+
+            # Get the current date and subtract the delta
+            published_date = datetime.now() - delta
+            
+            # Format the date to YMD
+            dateposted = published_date.strftime('%Y-%m-%d')
+          
         except:
            dateposted = "NA"
         try:   
