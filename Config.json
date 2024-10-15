@@ -6,7 +6,8 @@
     "DBconfig": "creds.json",
     "archived": [
         "Snagajob:when testing it gives verify you are a human",
-        "Jooble:when testing it gives verify you are a human"
+        "Jooble:when testing it gives verify you are a human",
+        "Gallagher: No posting date"
     ],
     "_maintenance": [
         "Cummins",
