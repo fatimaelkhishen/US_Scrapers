@@ -14,7 +14,9 @@ def get_job_links():
     p = 1  
 
     try:  
-        while True:  # Continue indefinitely until no more listings are found  
+       
+        while True:  
+
             url = f"{base_url}/search?joblocations=united%20states&usecLocation=true&Loc.LatLng=0%2C0&Loc.Radius=30&page={p}"  
             driver.get(url)  
             print(f"Accessing: {url}")  
@@ -71,58 +73,58 @@ def construct_job(driver, job_link):
         print(f"Error extracting posting date: {e}")  
 
     # Extracting Salary  
-    try:  
-        salary_tag = soup.find("li", id=lambda x: x and x.startswith('salartRange-'))  
-        salary = salary_tag.text.strip() if salary_tag else "NA"  
+    try:    
+        salary = driver.find_element(
+                By.XPATH, "/html/body/div[1]/div/main/div/div/div/div[2]/ul/li[2]/p")
     except Exception as e:  
         salary = "NA"  
         print(f"Error extracting salary: {e}")  
 
     # Extracting Remote Work Level  
     try:  
-        remote_work_level_tag = soup.find("h5", text="Remote Work Level:")  
+        remote_work_level_tag = soup.find("h5", string="Remote Work Level:")  
         remote_work_level = remote_work_level_tag.find_next("p").text.strip() if remote_work_level_tag else "NA"  
     except:  
         remote_work_level = "NA"  
     
     # Extracting Company  
     try:  
-        company_tag = soup.find("h5", text="Company:")  
+        company_tag = soup.find("h5", string="Company:")  
         company = company_tag.find_next("p").text.strip() if company_tag else "NA"  
     except:  
         company = "NA"  
 
     # Extracting Job Type  
     try:  
-        job_type_tag = soup.find("h5", text="Job Type:")  
+        job_type_tag = soup.find("h5", string="Job Type:")  
         job_type = job_type_tag.find_next("p").text.strip() if job_type_tag else "NA"  
     except:  
         job_type = "NA"  
 
     # Extracting Job Schedule  
     try:  
-        job_schedule_tag = soup.find("h5", text="Job Schedule:")  
+        job_schedule_tag = soup.find("h5", string="Job Schedule:")  
         job_schedule = job_schedule_tag.find_next("p").text.strip() if job_schedule_tag else "NA"  
     except:  
         job_schedule = "NA"  
 
     # Extracting Career Level  
     try:  
-        career_level_tag = soup.find("h5", text="Career Level:")  
+        career_level_tag = soup.find("h5", string="Career Level:")  
         career_level = career_level_tag.find_next("p").text.strip() if career_level_tag else "NA"  
     except:  
         career_level = "NA"  
 
     # Extracting Travel Required  
     try:  
-        travel_required_tag = soup.find("h5", text="Travel Required:")  
+        travel_required_tag = soup.find("h5", string="Travel Required:")  
         travel_required = travel_required_tag.find_next("p").text.strip() if travel_required_tag else "NA"  
     except:  
         travel_required = "NA"  
 
     # Extracting Categories  
     try:  
-        categories_tag = soup.find("h5", text="Categories:")  
+        categories_tag = soup.find("h5", string="Categories:")  
         categories = categories_tag.find_next("p").text.strip() if categories_tag else "NA"  
     except:  
         categories = "NA"  
