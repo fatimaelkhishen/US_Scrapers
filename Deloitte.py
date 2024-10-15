@@ -68,7 +68,7 @@ def construct_job(driver, job_link):
     except:
         datePosted = "NA"
     try:
-        companyName = soup.find(class_='direct_mobileLabel').text.strip()
+        companyName = soup.find(class_='direct_jobListingCompany').text.strip()
     except:
         companyName = "NA"
     try:

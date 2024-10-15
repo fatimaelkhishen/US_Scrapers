@@ -15,7 +15,7 @@ def get_job_links():
     try:
         while True:
             # Count number of jobs
-            curr_jobs_num = len(driver.find_elements(By.CLASS_NAME, "awsm-job-listing-item"))
+            curr_jobs_num = len(driver.find_elements(By.CLASS_NAME, "awsm-job-listing-item awsm-job-expired-item awsm-grid-item"))
             try:
                 # try to wait for the load more button to be clickable
                 WebDriverWait(driver, 4).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#content > article > div > div > div.awsm-job-listings.awsm-row.awsm-grid-col-2 > div.awsm-jobs-pagination.awsm-load-more-main > a")))
@@ -28,7 +28,7 @@ def get_job_links():
             WebDriverWait(driver, 10).until(lambda driver: curr_jobs_num != len(driver.find_elements(By.CLASS_NAME, "awsm-job-listing-item")))  # Add a sleep to allow new job listings to load
 
         soup = BeautifulSoup(driver.page_source, 'html.parser')
-        jobListings = soup.find_all(class_='awsm-job-listing-item awsm-job-expired-item awsm-grid-item')
+        jobListings = soup.find_all("div",class_='awsm-job-listing-item awsm-job-expired-item awsm-grid-item')
         for job in jobListings:
                 job_links.append(job.find('a')['href'])
     except Exception as e:
@@ -41,27 +41,35 @@ def construct_job(driver, job_link):
     soup = BeautifulSoup(driver.page_source, 'html.parser')
 
     try:
-        title = soup.find(class_='page-header-title').text
+        title = soup.find("h2",class_='single-post-title entry-title').text
     except:
         title = "NA"
     try:
         category = soup.find(
-            'div', class_='awsm-job-specification-job-category').text.replace('تصنيف الوظيفة: ', '')
+            'div', class_='awsm-job-specification-item awsm-job-specification-job-category').text.replace('تصنيف الوظيفة: ', '')
     except:
         category = "NA"
     try:
         jobType = soup.find(
-            'div', class_='awsm-job-specification-job-type').text.replace('نوع الوظيفة: ', '')
+            'div', class_='awsm-job-specification-item awsm-job-specification-job-type').text.replace('نوع الوظيفة: ', '')
     except:
         jobType = "NA"
     try:
         location = soup.find(
-            'div', class_='awsm-job-specification-job-location').text.replace('مقر العمل: ', '')
+            'div', class_='awsm-job-specification-item awsm-job-specification-job-location').text.replace('مقر العمل: ', '')
     except:
         location = "NA"
     try:
-        description = soup.find(
-            'div', class_='awsm-job-entry-content').text
+        company = soup.find('div',class_='awsm-job-specification-item awsm-job-specification-company').text.replace('اسم الشركة:','')
+    except:
+        company = "NA"
+    try:
+        salary = soup.find('div',class_='awsm-job-specification-item awsm-job-specification-rateb').text.replace('الراتب:','')
+    except:
+        salary = "NA"
+        
+    try:
+        description = soup.find('div', id='formToggleSheet').text
     except:
         description = "NA"
     try:
@@ -73,10 +81,12 @@ def construct_job(driver, job_link):
         PostingDate = "NA"
     jobPosting = {
         'SRC_Title': title,
+        'SRC_Company':company,
         'SRC_Description': description,
         'Link': job_link,
         'SRC_Category': category,
         'Job_Type': jobType,
+        'SRC_Salary':salary,
         'SRC_Country': location,
         'Posting_Date': PostingDate,
         'Website': 'Eaglejobs'

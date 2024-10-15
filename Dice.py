@@ -38,7 +38,7 @@ def construct_job(driver, job_link):
     soup = BeautifulSoup(driver.page_source, 'html.parser')
 
     try:
-        button = soup.find("button", id_="descriptionToggle")
+        button = soup.findAll("li", class_="pagination-next page-item ng-star-inserted")
         button.click()
     except:
         pass
