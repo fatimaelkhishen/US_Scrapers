@@ -6,49 +6,51 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC  
 import time  
 import pandas as pd  
-import json    
+import json  
 
 def getJobs():  
     all_jobs = []  
+    unique_links = set()  # Set to store unique job links  
     driver = webdriver.Chrome()  
+    url_base = "https://jobspresso.co/"  
+    driver.get(url_base)  
 
-     
-    url_bases = ["https://jobspresso.co/"]  
+    # Initialize current_page to 1  
+    current_page = 1  
 
-    for url_base in url_bases:  
-        driver.get(url_base)  
+    while True:  
+        try:  
+            # Wait for the "Load More" button to be visible  
+            more_jobs_button = WebDriverWait(driver, 10).until(  
+                EC.visibility_of_element_located((By.CSS_SELECTOR, 'a.load_more_jobs'))  
+            )  
 
-        while True:   
-            try:  
-                  
-                more_jobs_button = WebDriverWait(driver, 10).until(  
-                    EC.visibility_of_element_located((By.CSS_SELECTOR, 'a.load_more_jobs'))  
-                )  
+            driver.execute_script("arguments[0].scrollIntoView(true);", more_jobs_button)  
+            driver.execute_script("arguments[0].click();", more_jobs_button)  
+            time.sleep(3)  # Wait for jobs to load  
 
-                 
-                driver.execute_script("arguments[0].scrollIntoView(true);", more_jobs_button)  
-                driver.execute_script("arguments[0].click();", more_jobs_button)  
-                time.sleep(3)  
+            soup = BeautifulSoup(driver.page_source, 'html.parser')  
+            job_postings = soup.findAll("li", class_="job_listing")  
 
-                 
-                soup = BeautifulSoup(driver.page_source, 'html.parser')  
-                job_postings = soup.findAll("li", class_="job_listing")  
+            
 
-                
-                print(f"Loaded {len(job_postings)} job postings.")  
+            if len(job_postings) == 0:  
+                print("No more job postings found on this page. Exiting.")  
+                break  
 
-                
-                if len(job_postings) == 0:  
-                    print("No more job postings found. Exiting.")  
-                    break  
+            for job in job_postings:  
+                link = job.find('a')['href']    
 
-                for job in job_postings:  
-                    link = job.find('a')['href']    
-                    all_jobs.append({'link': link, 'SRC_Country': 'USA'})  
+                # Check if the link is already in the set of unique links  
+                if link not in unique_links:  
+                    all_jobs.append({'link': link})  
+                    unique_links.add(link)  # Add the link to the set to track it as seen  
 
-            except (NoSuchElementException, TimeoutException):  
-                print("No more job postings can be loaded or the 'Load More' button is not available. Exiting.")  
-                break   
+            current_page += 1  
+
+        except (NoSuchElementException, TimeoutException):  
+            print("No more job postings can be loaded or the 'Load More' button is not available. Exiting.")  
+            break   
 
     driver.quit()  
     return all_jobs  
@@ -58,7 +60,6 @@ def construct_job(driver, job_link):
     
     soup = BeautifulSoup(driver.page_source, 'html.parser')  
 
-    
     try:  
         title = soup.find("h1", class_='page-title').text  
     except Exception:  
@@ -80,9 +81,11 @@ def construct_job(driver, job_link):
     except Exception:  
         jobtype = "NA"   
 
-    
+     
+    if 'US' not in location and 'USA' not in location and 'United States' not in location:  
+        return None   
+
     try:  
-         
         script_tag = soup.find("script", type="application/ld+json")  
         if script_tag:  
             json_text = script_tag.string.strip()  
@@ -90,14 +93,13 @@ def construct_job(driver, job_link):
                 job_data = json.loads(json_text)  
                 datePosted = job_data.get('datePosted', 'NA')  
                 datePosted = datePosted.split('T')[0] if datePosted != 'NA' else 'NA'  
-            except json.JSONDecodeError as e:  
+            except json.JSONDecodeError:  
                 datePosted = 'NA'  
         else:  
             datePosted = 'NA'    
     except Exception:  
         datePosted = 'NA'  
 
-      
     jobPosting = {  
         'SRC_Title': title,  
         'SRC_Company': companyName,  
@@ -110,20 +112,26 @@ def construct_job(driver, job_link):
     return jobPosting  
 
 def save_to_excel(job_data):  
-    df = pd.DataFrame(job_data)  
-    df.to_excel("jobspresso.xlsx", index=False, engine='openpyxl')  
+    if job_data:    
+        df = pd.DataFrame(job_data)  
+        df.to_excel("jobspresso.xlsx", index=False, engine='openpyxl')  
+        print("Job data has been saved to jobspresso.xlsx.")  
+    else:  
+        print("No job data to save.")  
 
 def main():  
     job_links = getJobs()  
     if not job_links:  
         print("No job links were found.")  
         return  
-  
+
     driver = webdriver.Chrome()  
     job_data = []  
     for link in job_links:  
         job_posting = construct_job(driver, link['link'])  
-        job_data.append(job_posting)  
+        if job_posting:  
+            job_data.append(job_posting)  
+
     driver.quit()  
     save_to_excel(job_data)  
 
