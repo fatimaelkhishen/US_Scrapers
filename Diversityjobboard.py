@@ -39,19 +39,16 @@ def get_job_links():
                     pass  
 
             try:   
-                while True:    
-                    next_button = WebDriverWait(driver, 10).until(  
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, "a.page-link[rel='next']"))  
-                    )  
-                    if next_button.is_displayed():  
-                        driver.execute_script("arguments[0].scrollIntoView();", next_button)  
-                        next_button.click()   
-                        time.sleep(random.uniform(2, 5))   
-                        page_number += 1  
-                        break    
-                    else:  
-                        break  
+                next_button = WebDriverWait(driver, 10).until(  
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, "a[rel='next']"))  
+                )
+                driver.execute_script("arguments[0].scrollIntoView();", next_button)  
+                next_button.click()   
+                time.sleep(random.uniform(2, 5))   
+                page_number += 1  
+
             except Exception:  
+                print("No more 'Next' button found or unable to click. Exiting.")
                 break  
 
     finally:  
@@ -66,48 +63,47 @@ def construct_job(driver, job_link_page):
         return None    
 
     driver.get(job_link)  
-    WebDriverWait(driver, 30).until(  
-        EC.presence_of_element_located((By.CLASS_NAME, "job-inner-title"))  
-    )  
+    
+    
+    try:
+        WebDriverWait(driver, 40).until(  
+            EC.presence_of_element_located((By.CLASS_NAME, "jb-text-size-3xl"))
+        )  
+    except Exception:
+        print(f"Timeout waiting for job details on page: {job_link}")
+        return None
     
     soup = BeautifulSoup(driver.page_source, 'html.parser')  
     
-
-
+    
     try:  
-        title = soup.find("h1", class_="job-inner-title").text.strip() 
-   
+        title = soup.find("h1", class_="jb-text-size-3xl").text.strip() 
     except Exception:  
         title = 'NA'  
 
+   
     try:  
         description = soup.find(id='quill-container-with-job-details').text.replace('\n', '').strip()    
-
     except Exception:  
         description = 'NA' 
-          
-    try:  
-       info_items = soup.findAll("a", class_='job-inner-info-item')  
-       Company= info_items[0].text.strip()
-    except Exception:  
-        Company = 'NA'
-        
-    try:  
-       info_items = soup.findAll("a", class_='job-inner-info-item')  
-       job_type= info_items[1].text.strip() 
-    except Exception:  
-        job_type = 'NA'
-    
-    try:  
-       info_items = soup.findAll("a", class_='job-inner-info-item')
-       Country = info_items[2].text.strip()
-    except Exception:  
-        Country = 'NA'
 
+    
+    try:
+        detail_box = soup.find("div", class_="job-inner-detail-box")
+        info_items = detail_box.find_all("a", class_="d-inline-block")
+
+       
+        Company = info_items[0].text.strip() if len(info_items) > 0 else 'NA'
+        job_type = info_items[1].text.strip() if len(info_items) > 1 else 'NA'
+        Country = info_items[2].text.strip() if len(info_items) > 2 else 'NA'
+
+    except Exception:
+        Company = job_type = Country = 'NA'
+
+    
     try:
         script_tag = soup.findAll("script", type="application/ld+json")[1]
         if script_tag:
-            # Use regular expression to extract JSON content from the script tag
             json_text = re.search(r'(?<=<script type="application/ld\+json">)(.*?)(?=</script>)', str(script_tag), re.DOTALL)
             if json_text:
                 json_data = json_text.group(0).strip()
@@ -116,7 +112,7 @@ def construct_job(driver, job_link_page):
                     datePosted = job_data.get('datePosted', 'NA')
                     datePosted = datePosted.split('T')[0] if datePosted != 'NA' else 'NA'
                 except:
-                    pass
+                    datePosted = 'NA'
     except Exception:
         datePosted = 'NA'
                 
@@ -137,7 +133,6 @@ def save_to_excel(job_data):
     if job_data:  
         df = pd.DataFrame(job_data)  
         df.to_excel("DiversityJobBoard.xlsx", index=False)  
-         
 
 def main():  
     job_links = get_job_links()  
@@ -155,7 +150,7 @@ def main():
     save_to_excel(job_data)  
 
 if __name__ == "__main__":  
-    main()
+    main() 
 
 
 
